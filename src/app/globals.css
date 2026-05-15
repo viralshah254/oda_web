@@ -1,0 +1,134 @@
+@import url('https://fonts.googleapis.com/css2?family=Plus+Jakarta+Sans:wght@300;400;500;600;700;800&display=swap');
+
+@tailwind base;
+@tailwind components;
+@tailwind utilities;
+
+@layer base {
+  :root {
+    --background: 60 33% 99%;
+    --foreground: 0 0% 8%;
+    --card: 0 0% 100%;
+    --card-foreground: 0 0% 8%;
+    --popover: 0 0% 100%;
+    --popover-foreground: 0 0% 8%;
+    --primary: 47 94% 54%;
+    --primary-foreground: 0 0% 8%;
+    --secondary: 140 65% 32%;
+    --secondary-foreground: 0 0% 100%;
+    --muted: 120 20% 96%;
+    --muted-foreground: 0 0% 40%;
+    --accent: 120 20% 94%;
+    --accent-foreground: 0 0% 8%;
+    --destructive: 2 75% 56%;
+    --destructive-foreground: 0 0% 100%;
+    --border: 0 0% 92%;
+    --input: 0 0% 92%;
+    --ring: 47 94% 54%;
+    --radius: 18px;
+
+    --oda-glass: rgba(255, 255, 255, 0.72);
+    --oda-glass-strong: rgba(255, 255, 255, 0.88);
+    --oda-border: rgba(21, 21, 21, 0.08);
+    --oda-shadow: rgba(21, 21, 21, 0.10);
+
+    --oda-yellow: #F8C915;
+    --oda-green: #198A2E;
+    --oda-green-dark: #166B24;
+    --oda-charcoal: #1A1A1A;
+    --oda-ivory: #F5F5F0;
+    --oda-mint: #EBF9EE;
+    --oda-border-solid: #E8E8E0;
+  }
+
+  .dark {
+    --background: 0 0% 8%;
+    --foreground: 60 33% 99%;
+    --card: 0 0% 12%;
+    --card-foreground: 60 33% 99%;
+    --popover: 0 0% 12%;
+    --popover-foreground: 60 33% 99%;
+    --primary: 47 94% 54%;
+    --primary-foreground: 0 0% 8%;
+    --secondary: 140 65% 32%;
+    --secondary-foreground: 0 0% 100%;
+    --muted: 0 0% 18%;
+    --muted-foreground: 0 0% 60%;
+    --accent: 0 0% 18%;
+    --accent-foreground: 60 33% 99%;
+    --destructive: 2 75% 56%;
+    --destructive-foreground: 0 0% 100%;
+    --border: 0 0% 20%;
+    --input: 0 0% 20%;
+    --ring: 47 94% 54%;
+    --oda-glass: rgba(21, 21, 21, 0.72);
+    --oda-glass-strong: rgba(21, 21, 21, 0.88);
+    --oda-border: rgba(255, 255, 255, 0.08);
+    --oda-shadow: rgba(0, 0, 0, 0.30);
+  }
+}
+
+@layer base {
+  * {
+    @apply border-border;
+    box-sizing: border-box;
+  }
+  html {
+    scroll-behavior: smooth;
+  }
+  body {
+    @apply bg-background text-foreground font-sans;
+    -webkit-font-smoothing: antialiased;
+    -moz-osx-font-smoothing: grayscale;
+  }
+}
+
+@layer utilities {
+  .font-plus-jakarta {
+    font-family: var(--font-plus-jakarta), 'Inter', sans-serif;
+  }
+
+  .glass {
+    background: var(--oda-glass);
+    backdrop-filter: blur(18px);
+    -webkit-backdrop-filter: blur(18px);
+    border: 1px solid var(--oda-border);
+  }
+
+  .glass-strong {
+    background: var(--oda-glass-strong);
+    backdrop-filter: blur(28px);
+    -webkit-backdrop-filter: blur(28px);
+    border: 1px solid var(--oda-border);
+  }
+
+  .glass-dark {
+    background: rgba(26, 26, 26, 0.7);
+    backdrop-filter: blur(20px);
+    -webkit-backdrop-filter: blur(20px);
+    border: 1px solid rgba(255, 255, 255, 0.1);
+  }
+
+  .shimmer {
+    background: linear-gradient(
+      90deg,
+      rgba(21, 21, 21, 0.04) 25%,
+      rgba(21, 21, 21, 0.08) 50%,
+      rgba(21, 21, 21, 0.04) 75%
+    );
+    background-size: 200% 100%;
+    animation: shimmer 1.5s infinite linear;
+  }
+
+  .text-balance {
+    text-wrap: balance;
+  }
+
+  .scrollbar-hide {
+    -ms-overflow-style: none;
+    scrollbar-width: none;
+  }
+  .scrollbar-hide::-webkit-scrollbar {
+    display: none;
+  }
+}

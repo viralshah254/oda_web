@@ -1,0 +1,51 @@
+# Dependencies
+node_modules/
+.pnp
+.pnp.js
+
+# Next.js
+.next/
+out/
+build/
+
+# Local env & secrets — never commit (templates like .env.example are ok)
+.env
+.env.local
+.env.development.local
+.env.test.local
+.env.production.local
+.env*.local
+
+# Keep example env for documentation (no secrets)
+!.env.example
+
+# Vercel
+.vercel
+
+# Debug / logs
+npm-debug.log*
+yarn-debug.log*
+yarn-error.log*
+*.log
+
+# TypeScript
+*.tsbuildinfo
+
+# Tests (Playwright)
+test-results/
+playwright-report/
+playwright/.cache/
+
+# Coverage
+coverage/
+.nyc_output/
+
+# IDE
+.idea/
+.vscode/
+
+# OS
+.DS_Store
+
+# Misc
+*.pem
