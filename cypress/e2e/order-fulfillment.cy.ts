@@ -8,7 +8,9 @@ describe('Order Fulfillment Flow', () => {
     // Login as test user (mocked in test environment)
     cy.get('[data-cy="phone-input"]').type('0712000001');
     cy.get('[data-cy="send-otp-btn"]').click();
-    cy.get('[data-cy="otp-input"]').type('999999'); // test OTP
+    '9999'.split('').forEach((digit, i) => {
+      cy.get(`[data-cy="otp-digit-${i}"]`).type(digit);
+    });
     cy.get('[data-cy="verify-otp-btn"]').click();
   });
 

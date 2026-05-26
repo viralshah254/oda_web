@@ -2,6 +2,7 @@ import { z } from 'zod';
 
 /** Matches Prisma `B2BBusinessType` */
 export const b2bBusinessTypeSchema = z.enum([
+  'INDIVIDUAL',
   'KIOSK',
   'DUKA',
   'MINIMART',
@@ -15,6 +16,22 @@ export const b2bBusinessTypeSchema = z.enum([
   'INSTITUTION',
   'OTHER',
 ]);
+
+export const B2B_TYPE_LABELS: Record<string, string> = {
+  INDIVIDUAL: 'Individual / Sole Trader',
+  KIOSK: 'Kiosk',
+  DUKA: 'Shop (Duka)',
+  MINIMART: 'Minimart',
+  SUPERMARKET: 'Supermarket',
+  RESTAURANT: 'Restaurant / Café',
+  HOTEL: 'Hotel',
+  SCHOOL: 'School',
+  OFFICE: 'Office',
+  CATERER: 'Caterer',
+  RESELLER: 'Reseller / Distributor',
+  INSTITUTION: 'Institution / NGO',
+  OTHER: 'Other',
+};
 
 /** Mirrors `RegisterB2BDto` — wholesale shop onboarding */
 export const b2bRegisterFormSchema = z.object({

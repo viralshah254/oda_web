@@ -1,42 +1,25 @@
-import { BarChart3, ShoppingBag, Users, Truck, AlertTriangle } from 'lucide-react';
-import { ordersApi, authApi } from '@/lib/api-client';
+'use client';
 
-async function fetchDashboardStats() {
-  const API_BASE = process.env.API_INTERNAL_URL || process.env.NEXT_PUBLIC_API_URL || 'http://localhost:3000/api';
-  try {
-    const res = await fetch(`${API_BASE}/v1/admin/dashboard/stats`, {
-      next: { revalidate: 30 },
-      headers: { 'Content-Type': 'application/json' },
-    });
-    if (res.ok) return res.json();
-  } catch {}
-  return null;
+import { useCallback, useEffect, useState } from 'react';
+import { BarChart3, ShoppingBag, Truck, AlertTriangle, Loader2 } from 'lucide-react';
+import { AdminPageHeader, AdminMetricCard, AdminStatusPill } from '@/components/admin/admin-ui';
+import { adminApi } from '@/lib/api-client';
+
+interface DashboardStats {
+  orders?: { today?: number; growth?: number };
+  revenue?: { todayKes?: number };
+  operations?: { activeRiders?: number; openTickets?: number };
 }
 
-async function fetchRecentOrders() {
-  const API_BASE = process.env.API_INTERNAL_URL || process.env.NEXT_PUBLIC_API_URL || 'http://localhost:3000/api';
-  try {
-    const res = await fetch(`${API_BASE}/v1/orders?limit=5&sort=recent`, {
-      next: { revalidate: 15 },
-      headers: { 'Content-Type': 'application/json' },
-    });
-    if (res.ok) {
-      const data = await res.json();
-      return Array.isArray(data) ? data : data.items ?? [];
-    }
-  } catch {}
-  return null;
+interface OrderRow {
+  id: string;
+  status: string;
+  totalKes?: number;
+  totalAmountKes?: number;
+  createdAt?: string;
+  customer?: { user?: { name?: string }; name?: string };
+  customerName?: string;
 }
-
-const statusColor: Record<string, string> = {
-  PAYMENT_PENDING: 'bg-yellow-100 text-yellow-700',
-  CONFIRMED: 'bg-blue-100 text-blue-700',
-  PREPARING: 'bg-orange-100 text-orange-700',
-  OUT_FOR_DELIVERY: 'bg-blue-100 text-blue-700',
-  DELIVERED: 'bg-green-100 text-green-700',
-  CANCELLED: 'bg-red-100 text-red-700',
-  PAYMENT_FAILED: 'bg-red-100 text-red-700',
-};
 
 const statusLabel: Record<string, string> = {
   PAYMENT_PENDING: 'Pending',
@@ -48,128 +31,168 @@ const statusLabel: Record<string, string> = {
   PAYMENT_FAILED: 'Failed',
 };
 
-export default async function AdminDashboard() {
-  const [statsData, recentOrders] = await Promise.all([
-    fetchDashboardStats(),
-    fetchRecentOrders(),
-  ]);
+export default function AdminDashboard() {
+  const [statsData, setStatsData] = useState<DashboardStats | null>(null);
+  const [orders, setOrders] = useState<OrderRow[]>([]);
+  const [loading, setLoading] = useState(true);
+  const [err, setErr] = useState<string | null>(null);
 
   const today = new Date().toLocaleDateString('en-KE', {
     weekday: 'long', day: 'numeric', month: 'long', year: 'numeric',
   });
 
+  const load = useCallback(async () => {
+    setLoading(true);
+    setErr(null);
+    try {
+      const [statsRes, ordersRes] = await Promise.all([
+        adminApi.getDashboard(),
+        adminApi.getOrders({ limit: 5, page: 1 }),
+      ]);
+      setStatsData(statsRes.data as DashboardStats);
+      const raw = ordersRes.data as { orders?: OrderRow[] };
+      setOrders(raw.orders ?? []);
+    } catch (e: unknown) {
+      setErr(e instanceof Error ? e.message : 'Failed to load dashboard');
+    } finally {
+      setLoading(false);
+    }
+  }, []);
+
+  useEffect(() => { void load(); }, [load]);
+
+  const growth = statsData?.orders?.growth;
+  const growthStr = growth != null ? `${growth >= 0 ? '+' : ''}${growth}%` : '';
+
   const stats = [
     {
       label: "Today's Orders",
-      value: statsData?.todayOrderCount ?? '—',
-      change: statsData?.todayOrderChange ?? '',
+      value: statsData?.orders?.today?.toLocaleString() ?? '—',
+      change: growthStr,
       icon: ShoppingBag,
-      color: 'bg-[#198A2E]',
+      accent: 'green' as const,
     },
     {
       label: 'Revenue (KES)',
-      value: statsData?.todayRevenueKes ? `${Math.floor(statsData.todayRevenueKes / 100).toLocaleString()}` : '—',
-      change: statsData?.revenueChange ?? '',
+      value: statsData?.revenue?.todayKes
+        ? Math.floor(statsData.revenue.todayKes / 100).toLocaleString()
+        : '—',
+      change: '',
       icon: BarChart3,
-      color: 'bg-[#1565C0]',
+      accent: 'yellow' as const,
     },
     {
       label: 'Active Riders',
-      value: statsData?.activeRiders ?? '—',
+      value: statsData?.operations?.activeRiders?.toLocaleString() ?? '—',
       change: '',
       icon: Truck,
-      color: 'bg-[#E65100]',
+      accent: 'orange' as const,
     },
     {
       label: 'Open Tickets',
-      value: statsData?.openTickets ?? '—',
+      value: statsData?.operations?.openTickets?.toLocaleString() ?? '—',
       change: '',
       icon: AlertTriangle,
-      color: 'bg-[#AD1457]',
+      accent: 'red' as const,
     },
   ];
 
-  const fallbackOrders = [
-    { id: 'ORD-SAMPLE', customer: 'Loading...', status: 'CONFIRMED', totalAmountKes: 0, createdAt: new Date().toISOString() },
-  ];
-
-  const orders = recentOrders ?? fallbackOrders;
-
   return (
-    <div className="p-8">
-      <div className="mb-8">
-        <h1 className="text-2xl font-extrabold text-[#1A1A1A] font-plus-jakarta">Dashboard</h1>
-        <p className="text-sm text-[#666] mt-1 font-plus-jakarta">{today} · Nairobi, Kenya</p>
-        {!statsData && (
-          <p className="text-xs text-yellow-600 mt-1 font-plus-jakarta">⚠ Live data unavailable — connect the backend to see real stats.</p>
-        )}
-      </div>
+    <div className="p-8 max-w-6xl">
+      <AdminPageHeader title="Dashboard" subtitle={`${today} · Nairobi, Kenya`} />
 
-      {/* Stats */}
-      <div className="grid grid-cols-2 lg:grid-cols-4 gap-4 mb-8">
-        {stats.map(({ label, value, change, icon: Icon, color }) => (
-          <div key={label} className="bg-white rounded-2xl border border-[#E8E8E0] p-5">
-            <div className={`w-10 h-10 ${color} rounded-xl flex items-center justify-center mb-3`}>
-              <Icon size={18} className="text-white" />
-            </div>
-            <p className="text-2xl font-extrabold text-[#1A1A1A] font-plus-jakarta">{value}</p>
-            <p className="text-sm text-[#666] font-plus-jakarta mt-0.5">{label}</p>
-            {change && (
-              <p className={`text-xs font-semibold mt-1 font-plus-jakarta ${change.startsWith('+') ? 'text-[#198A2E]' : 'text-red-600'}`}>
-                {change} vs yesterday
-              </p>
-            )}
+      {err && (
+        <div className="mb-5 rounded-xl bg-red-50 border border-red-100 text-red-700 text-sm px-4 py-3 font-plus-jakarta">
+          {err}
+        </div>
+      )}
+
+      {loading ? (
+        <div className="flex items-center justify-center py-20 text-oda-charcoal/40">
+          <Loader2 className="animate-spin mr-2" size={20} /> Loading dashboard…
+        </div>
+      ) : (
+        <>
+          <div className="grid grid-cols-2 lg:grid-cols-4 gap-4 mb-8">
+            {stats.map(({ label, value, change, icon: Icon, accent }) => (
+              <AdminMetricCard
+                key={label}
+                label={label}
+                value={String(value)}
+                subValue={change ? `${change} vs yesterday` : undefined}
+                icon={<Icon size={17} />}
+                accent={accent}
+              />
+            ))}
           </div>
-        ))}
-      </div>
 
-      {/* Recent Orders */}
-      <div className="bg-white rounded-2xl border border-[#E8E8E0] p-5">
-        <div className="flex items-center justify-between mb-4">
-          <h2 className="text-base font-bold text-[#1A1A1A] font-plus-jakarta">Recent Orders</h2>
-          <a href="/admin/orders" className="text-sm text-[#198A2E] font-semibold font-plus-jakarta hover:underline">
-            View all
-          </a>
-        </div>
-        <div className="overflow-x-auto">
-          <table className="w-full text-sm">
-            <thead>
-              <tr className="text-left text-[#999] font-plus-jakarta border-b border-[#E8E8E0]">
-                <th className="pb-2 font-medium">Order</th>
-                <th className="pb-2 font-medium">Customer</th>
-                <th className="pb-2 font-medium">Status</th>
-                <th className="pb-2 font-medium text-right">Total</th>
-                <th className="pb-2 font-medium text-right">Time</th>
-              </tr>
-            </thead>
-            <tbody className="divide-y divide-[#F5F5F0]">
-              {orders.map((order: any) => (
-                <tr key={order.id} className="hover:bg-[#FAFAF8] transition-colors">
-                  <td className="py-3">
-                    <a href={`/admin/orders/${order.id}`} className="font-bold text-[#198A2E] font-plus-jakarta hover:underline">
-                      #{(order.id ?? '').substring(0, 8).toUpperCase()}
-                    </a>
-                  </td>
-                  <td className="py-3 text-[#444] font-plus-jakarta">
-                    {order.customer?.name ?? order.customerName ?? 'Customer'}
-                  </td>
-                  <td className="py-3">
-                    <span className={`text-xs font-bold px-2 py-1 rounded-full font-plus-jakarta ${statusColor[order.status] ?? 'bg-gray-100 text-gray-700'}`}>
-                      {statusLabel[order.status] ?? order.status}
-                    </span>
-                  </td>
-                  <td className="py-3 text-right font-bold text-[#1A1A1A] font-plus-jakarta">
-                    KES {order.totalAmountKes ? Math.floor(order.totalAmountKes / 100) : '—'}
-                  </td>
-                  <td className="py-3 text-right text-[#999] font-plus-jakarta">
-                    {order.createdAt ? new Date(order.createdAt).toLocaleTimeString('en-KE', { timeStyle: 'short' }) : '—'}
-                  </td>
-                </tr>
-              ))}
-            </tbody>
-          </table>
-        </div>
-      </div>
+          <div className="bg-white rounded-2xl border border-oda-charcoal/8 overflow-hidden">
+            <div className="flex items-center justify-between px-5 py-4 border-b border-oda-charcoal/8">
+              <h2 className="text-base font-bold text-oda-charcoal font-plus-jakarta">Recent Orders</h2>
+              <a href="/admin/orders" className="text-sm text-oda-green font-semibold font-plus-jakarta hover:underline">
+                View all →
+              </a>
+            </div>
+            <div className="overflow-x-auto">
+              <table className="w-full text-sm">
+                <thead>
+                  <tr className="border-b border-oda-charcoal/8">
+                    {['Order', 'Customer', 'Status', 'Total', 'Time'].map((h) => (
+                      <th key={h} className="text-left text-xs font-bold text-oda-charcoal/40 px-5 py-3 font-plus-jakarta">
+                        {h}
+                      </th>
+                    ))}
+                  </tr>
+                </thead>
+                <tbody className="divide-y divide-oda-charcoal/4">
+                  {orders.length === 0 ? (
+                    <tr>
+                      <td colSpan={5} className="px-5 py-10 text-center text-oda-charcoal/30 font-plus-jakarta text-sm">
+                        No recent orders
+                      </td>
+                    </tr>
+                  ) : orders.map((order) => {
+                    const total = order.totalKes ?? order.totalAmountKes ?? 0;
+                    const customerName =
+                      order.customer?.user?.name ??
+                      order.customer?.name ??
+                      order.customerName ??
+                      'Customer';
+                    return (
+                      <tr key={order.id} className="hover:bg-oda-ivory/60 transition-colors">
+                        <td className="px-5 py-3">
+                          <span className="font-bold text-oda-green font-plus-jakarta">
+                            #{order.id.substring(0, 8).toUpperCase()}
+                          </span>
+                        </td>
+                        <td className="px-5 py-3 text-oda-charcoal/70 font-plus-jakarta">{customerName}</td>
+                        <td className="px-5 py-3">
+                          <AdminStatusPill
+                            label={statusLabel[order.status] ?? order.status}
+                            variant={
+                              order.status === 'DELIVERED' ? 'success' :
+                              order.status === 'CANCELLED' || order.status === 'PAYMENT_FAILED' ? 'error' :
+                              order.status === 'PAYMENT_PENDING' ? 'warning' : 'neutral'
+                            }
+                          />
+                        </td>
+                        <td className="px-5 py-3 font-bold text-oda-charcoal font-plus-jakarta">
+                          KES {total ? Math.floor(total / 100).toLocaleString() : '—'}
+                        </td>
+                        <td className="px-5 py-3 text-oda-charcoal/40 font-plus-jakarta">
+                          {order.createdAt
+                            ? new Date(order.createdAt).toLocaleTimeString('en-KE', { timeStyle: 'short' })
+                            : '—'}
+                        </td>
+                      </tr>
+                    );
+                  })}
+                </tbody>
+              </table>
+            </div>
+          </div>
+        </>
+      )}
     </div>
   );
 }

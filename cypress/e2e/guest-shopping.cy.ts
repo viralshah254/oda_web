@@ -30,7 +30,9 @@ describe('Guest Shopping Flow', () => {
     // Login flow
     cy.get('[data-cy="phone-input"]').type('0712345678');
     cy.get('[data-cy="send-otp-btn"]').click();
-    cy.get('[data-cy="otp-input"]').type('123456');
+    '1234'.split('').forEach((digit, i) => {
+      cy.get(`[data-cy="otp-digit-${i}"]`).type(digit);
+    });
     cy.get('[data-cy="verify-otp-btn"]').click();
     // Cart should be preserved
     cy.get('[data-cy="cart-item-count"]').should('contain', '1');

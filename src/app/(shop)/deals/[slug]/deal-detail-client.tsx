@@ -25,9 +25,9 @@ export function DealDetailClient({ deal }: { deal: DealCollection }) {
   const products = deal.products.map((p) => ({ ...p.product, isHighlighted: p.isHighlighted }));
 
   return (
-    <div className="min-h-screen bg-[#F5F5F0]">
+    <div className="min-h-screen bg-oda-ivory">
       {/* ── Header ──────────────────────────────────────────────────────── */}
-      <div style={{ backgroundColor: theme.bg }} className="border-b border-[#E8E8E0]/40">
+      <div style={{ backgroundColor: theme.bg }} className="border-b border-gray-100/40">
         <div className="max-w-7xl mx-auto px-4 py-5">
           <Link
             href="/"
@@ -83,7 +83,7 @@ export function DealDetailClient({ deal }: { deal: DealCollection }) {
       <div className="max-w-7xl mx-auto px-4 py-6">
         {products.length === 0 ? (
           <div className="text-center py-20">
-            <p className="text-[#1A1A1A]/40 font-plus-jakarta">No products in this deal yet.</p>
+            <p className="text-oda-charcoal/40 font-plus-jakarta">No products in this deal yet.</p>
           </div>
         ) : (
           <motion.div

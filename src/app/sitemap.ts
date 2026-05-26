@@ -9,12 +9,12 @@ export default function sitemap(): MetadataRoute.Sitemap {
     { url: `${baseUrl}/categories`, priority: 0.9 },
     { url: `${baseUrl}/b2b`, priority: 0.8 },
     { url: `${baseUrl}/supplier`, priority: 0.7 },
+    { url: `${baseUrl}/supplier/apply`, priority: 0.65 },
     { url: `${baseUrl}/manufacturer`, priority: 0.7 },
-    { url: `${baseUrl}/careers`, priority: 0.6 },
     { url: `${baseUrl}/rider`, priority: 0.7 },
-    { url: `${baseUrl}/about`, priority: 0.5 },
-    { url: `${baseUrl}/privacy`, priority: 0.3 },
-    { url: `${baseUrl}/terms`, priority: 0.3 },
+    { url: `${baseUrl}/rider/apply`, priority: 0.65 },
+    { url: `${baseUrl}/legal/privacy`, priority: 0.3 },
+    { url: `${baseUrl}/legal/terms`, priority: 0.3 },
   ];
 
   const categoryPages = [

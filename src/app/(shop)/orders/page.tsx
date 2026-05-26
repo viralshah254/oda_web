@@ -16,10 +16,10 @@ const statusConfig: Record<string, { label: string; color: string }> = {
 
 export default function OrdersPage() {
   return (
-    <div className="min-h-screen bg-[#F5F5F0]">
-      <div className="bg-white border-b border-[#E8E8E0] px-4 py-4">
+    <div className="min-h-screen bg-oda-ivory">
+      <div className="bg-white border-b border-gray-100 px-4 py-4">
         <div className="max-w-2xl mx-auto">
-          <h1 className="text-xl font-extrabold text-[#1A1A1A] font-plus-jakarta">Your Orders</h1>
+          <h1 className="text-xl font-extrabold text-oda-charcoal font-plus-jakarta">Your Orders</h1>
         </div>
       </div>
       <div className="max-w-2xl mx-auto px-4 py-6 space-y-3">
@@ -29,15 +29,15 @@ export default function OrdersPage() {
             <Link
               key={order.id}
               href={`/orders/${order.id}`}
-              className="block bg-white rounded-2xl border border-[#E8E8E0] p-5 hover:border-[#198A2E]/30 transition-colors"
+              className="block bg-white rounded-2xl border border-gray-100 p-5 hover:border-oda-green/30 transition-colors"
             >
               <div className="flex items-start justify-between">
                 <div className="flex items-center gap-3">
-                  <div className="w-10 h-10 bg-[#F5F5F0] rounded-xl flex items-center justify-center">
+                  <div className="w-10 h-10 bg-oda-ivory rounded-xl flex items-center justify-center">
                     <Package size={18} className="text-[#666]" />
                   </div>
                   <div>
-                    <p className="text-sm font-bold text-[#1A1A1A] font-plus-jakarta">{order.id}</p>
+                    <p className="text-sm font-bold text-oda-charcoal font-plus-jakarta">{order.id}</p>
                     <p className="text-xs text-[#999] font-plus-jakarta">{order.date} · {order.items}</p>
                   </div>
                 </div>
@@ -47,14 +47,14 @@ export default function OrdersPage() {
                 </div>
               </div>
               {order.etaMin && (
-                <div className="mt-3 flex items-center gap-2 bg-[#EBF9EE] rounded-xl px-3 py-2">
-                  <span className="text-xs font-bold text-[#198A2E] font-plus-jakarta">⚡ Arriving in ~{order.etaMin} minutes</span>
+                <div className="mt-3 flex items-center gap-2 bg-oda-mint rounded-xl px-3 py-2">
+                  <span className="text-xs font-bold text-oda-green font-plus-jakarta">⚡ Arriving in ~{order.etaMin} minutes</span>
                 </div>
               )}
               <div className="mt-3 flex items-center justify-between">
-                <span className="text-sm font-bold text-[#1A1A1A] font-plus-jakarta">{order.total}</span>
+                <span className="text-sm font-bold text-oda-charcoal font-plus-jakarta">{order.total}</span>
                 {order.status === 'DELIVERED' && (
-                  <button className="text-xs font-bold text-[#198A2E] font-plus-jakarta">Reorder</button>
+                  <button className="text-xs font-bold text-oda-green font-plus-jakarta">Reorder</button>
                 )}
               </div>
             </Link>

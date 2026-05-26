@@ -423,13 +423,21 @@ export default function AdminCatalogPage() {
                         </span>
                       </td>
                       <td className="px-5 py-3">
-                        <button
-                          type="button"
-                          onClick={() => openProductImages(p)}
-                          className="text-xs text-[#198A2E] font-bold font-plus-jakarta hover:underline"
-                        >
-                          Images
-                        </button>
+                        <div className="flex items-center gap-3">
+                          <a
+                            href={`/admin/pricing?productId=${p.id}`}
+                            className="text-xs text-[#198A2E] font-bold font-plus-jakarta hover:underline"
+                          >
+                            Pricing
+                          </a>
+                          <button
+                            type="button"
+                            onClick={() => openProductImages(p)}
+                            className="text-xs text-[#198A2E] font-bold font-plus-jakarta hover:underline"
+                          >
+                            Images
+                          </button>
+                        </div>
                       </td>
                     </tr>
                   );

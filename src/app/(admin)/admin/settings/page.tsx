@@ -1,52 +1,114 @@
 'use client';
 
-import { useState } from 'react';
+import { useState, useEffect, useCallback } from 'react';
+import { Loader2, RefreshCw } from 'lucide-react';
+import { featureFlagsAdminApi } from '@/lib/api-client';
+import { AdminPageHeader } from '@/components/admin/admin-ui';
 
-const flags = [
-  { key: 'enable_b2b_wholesale', label: 'B2B Wholesale', description: 'Enable B2B wholesale pricing and account registration', enabled: true },
-  { key: 'enable_loyalty', label: 'Loyalty Program', description: 'Enable point earning and redemption for customers', enabled: true },
-  { key: 'enable_recurring_cart', label: 'Recurring Cart', description: 'Allow customers to schedule recurring orders', enabled: false },
-  { key: 'enable_ai_recommendations', label: 'AI Recommendations', description: 'Enable ML-powered product recommendations', enabled: false },
-  { key: 'enable_mpesa_stk', label: 'M-Pesa STK Push', description: 'Enable M-Pesa STK push for checkout payments', enabled: true },
-  { key: 'enable_franchise_dashboard', label: 'Franchise Dashboard', description: 'Enable multi-franchise management views', enabled: false },
-];
+interface FeatureFlag {
+  id: string;
+  key: string;
+  name: string;
+  description?: string | null;
+  isEnabled: boolean;
+}
 
 export default function AdminSettingsPage() {
-  const [flagState, setFlagState] = useState<Record<string, boolean>>(
-    Object.fromEntries(flags.map((f) => [f.key, f.enabled]))
-  );
+  const [flags, setFlags] = useState<FeatureFlag[]>([]);
+  const [loading, setLoading] = useState(true);
+  const [error, setError] = useState<string | null>(null);
+  const [toggling, setToggling] = useState<string | null>(null);
+
+  const load = useCallback(async () => {
+    setLoading(true);
+    setError(null);
+    try {
+      const res = await featureFlagsAdminApi.list();
+      const data = res.data;
+      setFlags(Array.isArray(data) ? data : data?.flags ?? []);
+    } catch {
+      setError('Failed to load feature flags');
+      setFlags([]);
+    } finally {
+      setLoading(false);
+    }
+  }, []);
+
+  useEffect(() => { load(); }, [load]);
+
+  const handleToggle = async (key: string, enabled: boolean) => {
+    setToggling(key);
+    setFlags((prev) => prev.map((f) => (f.key === key ? { ...f, isEnabled: enabled } : f)));
+    try {
+      await featureFlagsAdminApi.toggle(key, enabled);
+    } catch {
+      setFlags((prev) => prev.map((f) => (f.key === key ? { ...f, isEnabled: !enabled } : f)));
+      setError('Failed to update feature flag');
+    } finally {
+      setToggling(null);
+    }
+  };
 
   return (
     <div className="p-8 max-w-3xl">
-      <h1 className="text-2xl font-extrabold text-[#1A1A1A] font-plus-jakarta mb-8">Settings</h1>
+      <AdminPageHeader
+        title="Settings"
+        subtitle="Toggle features without deploying code"
+        actions={
+          <button onClick={load} className="text-oda-charcoal/40 hover:text-oda-charcoal transition-colors p-2">
+            <RefreshCw size={16} />
+          </button>
+        }
+      />
 
-      <div className="bg-white rounded-2xl border border-[#E8E8E0] overflow-hidden mb-6">
-        <div className="px-6 py-4 border-b border-[#E8E8E0]">
-          <h2 className="text-base font-bold text-[#1A1A1A] font-plus-jakarta">Feature Flags</h2>
-          <p className="text-xs text-[#999] mt-0.5 font-plus-jakarta">Toggle features without deploying code</p>
+      {error && (
+        <div className="mb-4 text-sm text-red-600 bg-red-50 border border-red-100 rounded-xl px-4 py-3 font-plus-jakarta">
+          {error}
         </div>
-        <div className="divide-y divide-[#E8E8E0]">
-          {flags.map((flag) => (
-            <div key={flag.key} className="flex items-center gap-4 px-6 py-4">
-              <div className="flex-1">
-                <p className="text-sm font-semibold text-[#1A1A1A] font-plus-jakarta">{flag.label}</p>
-                <p className="text-xs text-[#999] mt-0.5 font-plus-jakarta">{flag.description}</p>
+      )}
+
+      <div className="bg-white rounded-2xl border border-oda-charcoal/8 overflow-hidden">
+        <div className="px-6 py-4 border-b border-oda-charcoal/8">
+          <h2 className="text-base font-bold text-oda-charcoal font-plus-jakarta">Feature Flags</h2>
+        </div>
+
+        {loading ? (
+          <div className="flex justify-center py-16">
+            <Loader2 size={24} className="text-oda-green animate-spin" />
+          </div>
+        ) : flags.length === 0 ? (
+          <p className="text-center py-12 text-sm text-oda-charcoal/40 font-plus-jakarta">No feature flags configured</p>
+        ) : (
+          <div className="divide-y divide-oda-charcoal/8">
+            {flags.map((flag) => (
+              <div key={flag.key} className="flex items-center gap-4 px-6 py-4">
+                <div className="flex-1">
+                  <p className="text-sm font-semibold text-oda-charcoal font-plus-jakarta">{flag.name}</p>
+                  <p className="text-xs text-oda-charcoal/40 mt-0.5 font-plus-jakarta">
+                    {flag.description ?? flag.key}
+                  </p>
+                </div>
+                <button
+                  onClick={() => handleToggle(flag.key, !flag.isEnabled)}
+                  disabled={toggling === flag.key}
+                  className={`w-12 h-6 rounded-full transition-colors relative shrink-0 ${
+                    flag.isEnabled ? 'bg-oda-green' : 'bg-oda-charcoal/15'
+                  } ${toggling === flag.key ? 'opacity-60' : ''}`}
+                >
+                  {toggling === flag.key ? (
+                    <Loader2 size={14} className="absolute top-1 left-1/2 -translate-x-1/2 animate-spin text-white" />
+                  ) : (
+                    <span
+                      className={`absolute top-0.5 w-5 h-5 bg-white rounded-full shadow transition-transform ${
+                        flag.isEnabled ? 'translate-x-6' : 'translate-x-0.5'
+                      }`}
+                    />
+                  )}
+                </button>
               </div>
-              <button
-                onClick={() => setFlagState((s) => ({ ...s, [flag.key]: !s[flag.key] }))}
-                className={`w-12 h-6 rounded-full transition-colors relative ${
-                  flagState[flag.key] ? 'bg-[#198A2E]' : 'bg-[#E8E8E0]'
-                }`}
-              >
-                <span
-                  className={`absolute top-0.5 w-5 h-5 bg-white rounded-full shadow transition-transform ${
-                    flagState[flag.key] ? 'translate-x-6' : 'translate-x-0.5'
-                  }`}
-                />
-              </button>
-            </div>
-          ))}
-        </div>
+            ))}
+          </div>
+        )}
       </div>
     </div>
   );

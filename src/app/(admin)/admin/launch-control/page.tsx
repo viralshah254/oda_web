@@ -1,6 +1,7 @@
 'use client';
 
-import React, { useState, useEffect } from 'react';
+import React, { useState, useEffect, useCallback } from 'react';
+import { adminApi, featureFlagsAdminApi, ordersCommandAdminApi } from '@/lib/api-client';
 
 // ── Types ─────────────────────────────────────────────────────────────────────
 
@@ -53,11 +54,11 @@ const MOCK_INCIDENTS: IncidentAlert[] = [
 // ── Component ─────────────────────────────────────────────────────────────────
 
 function statusBg(s: 'ok' | 'warn' | 'crit') {
-  return { ok: 'border-green-200 bg-green-50', warn: 'border-amber-200 bg-amber-50', crit: 'border-red-200 bg-red-50' }[s];
+  return { ok: 'border-oda-green/30 bg-oda-mint', warn: 'border-amber-200 bg-amber-50', crit: 'border-red-200 bg-red-50' }[s];
 }
 
 function statusText(s: 'ok' | 'warn' | 'crit') {
-  return { ok: 'text-green-700', warn: 'text-amber-700', crit: 'text-red-700' }[s];
+  return { ok: 'text-oda-green-dark', warn: 'text-amber-700', crit: 'text-oda-red' }[s];
 }
 
 function severityBg(s: 'critical' | 'warning' | 'info') {
@@ -65,32 +66,83 @@ function severityBg(s: 'critical' | 'warning' | 'info') {
 }
 
 function severityText(s: 'critical' | 'warning' | 'info') {
-  return { critical: 'text-red-700', warning: 'text-amber-700', info: 'text-blue-700' }[s];
+  return { critical: 'text-oda-red', warning: 'text-amber-700', info: 'text-blue-700' }[s];
 }
 
 export default function LaunchControlPage() {
   const [flags, setFlags] = useState<FeatureFlag[]>(MOCK_FLAGS);
+  const [incidents, setIncidents] = useState<IncidentAlert[]>(MOCK_INCIDENTS);
+  const [dashboard, setDashboard] = useState<{ ordersToday?: number; revenueToday?: number; activeRiders?: number; openTickets?: number } | null>(null);
   const [lastRefresh, setLastRefresh] = useState(new Date());
 
-  // Simulate live refresh every 30s
-  useEffect(() => {
-    const t = setInterval(() => setLastRefresh(new Date()), 30_000);
-    return () => clearInterval(t);
+  const refresh = useCallback(async () => {
+    setLastRefresh(new Date());
+    try {
+      const [flagRes, dashRes, boardRes] = await Promise.all([
+        featureFlagsAdminApi.list(),
+        adminApi.getDashboard(),
+        ordersCommandAdminApi.board(),
+      ]);
+      const rawFlags = flagRes.data?.flags ?? flagRes.data ?? [];
+      if (Array.isArray(rawFlags) && rawFlags.length) {
+        setFlags(
+          rawFlags.map((f: { key: string; label?: string; isEnabled: boolean; category?: string }) => ({
+            id: f.key,
+            label: f.label ?? f.key,
+            enabled: f.isEnabled,
+            category: f.category ?? 'Core',
+          })),
+        );
+      }
+      setDashboard({
+        ordersToday: dashRes.data?.orders?.today,
+        revenueToday: dashRes.data?.revenue?.todayKes,
+        activeRiders: dashRes.data?.operations?.activeRiders,
+        openTickets: dashRes.data?.operations?.openTickets,
+      });
+      const columns = boardRes.data?.columns ?? [];
+      const backlog = columns.reduce((n: number, c: { orders?: unknown[] }) => n + (c.orders?.length ?? 0), 0);
+      if (backlog > 0) {
+        setIncidents((prev) => [
+          {
+            id: 'orders-backlog',
+            severity: backlog > 50 ? 'warning' : 'info',
+            title: 'Orders command backlog',
+            detail: `${backlog} orders in active fulfillment columns`,
+            time: new Date().toLocaleTimeString('en-KE', { hour: '2-digit', minute: '2-digit' }),
+          },
+          ...prev.filter((i) => i.id !== 'orders-backlog'),
+        ]);
+      }
+    } catch {
+      // Keep mock fallbacks when API unavailable
+    }
   }, []);
 
+  useEffect(() => {
+    void refresh();
+    const t = setInterval(() => void refresh(), 30_000);
+    return () => clearInterval(t);
+  }, [refresh]);
+
   const metrics: MetricCard[] = [
-    { title: 'Payment Health', icon: '💳', primary: 'STK Success: 94.2%', secondary: '12 failed · 3 pending recon', status: 'warn' },
-    { title: 'Order Creation', icon: '🛒', primary: '342 orders/hr', secondary: 'Conversion: 68% · +4% vs yesterday', status: 'ok' },
-    { title: 'Delivery SLA', icon: '⚡', primary: '87% on-time (last 2h)', secondary: 'Avg delivery: 28 min', status: 'warn' },
-    { title: 'Branch SLA', icon: '🏪', primary: 'Pick: 4.2 min avg', secondary: 'Pack: 2.8 min · Queue: 14 orders', status: 'ok' },
-    { title: 'Support Backlog', icon: '🎧', primary: '34 open tickets', secondary: '3 >SLA · 1 critical', status: 'warn' },
-    { title: 'Executive Summary', icon: '📊', primary: 'GMV: KSh 1.24M today', secondary: '2,847 orders · 142 riders active · 8 branches', status: 'ok' },
+    { title: 'Payment Health', icon: '💳', primary: 'See Finance PRR', secondary: 'Reconciliation in admin payments', status: 'warn' },
+    { title: 'Order Creation', icon: '🛒', primary: `${dashboard?.ordersToday ?? '—'} orders today`, secondary: 'Live from admin dashboard', status: 'ok' },
+    { title: 'Delivery SLA', icon: '⚡', primary: `${dashboard?.activeRiders ?? '—'} riders active`, secondary: 'Rider pool from dashboard API', status: 'ok' },
+    { title: 'Branch SLA', icon: '🏪', primary: 'Pick/pack via supplier portal', secondary: 'Branch metrics in supplier ops', status: 'ok' },
+    { title: 'Support Backlog', icon: '🎧', primary: `${dashboard?.openTickets ?? '—'} open tickets`, secondary: 'CX queue from dashboard', status: 'warn' },
+    { title: 'Executive Summary', icon: '📊', primary: `KES ${((dashboard?.revenueToday ?? 0) / 100).toLocaleString()} today`, secondary: 'Confirmed revenue (minor units)', status: 'ok' },
   ];
 
-  function toggleFlag(id: string) {
-    setFlags((prev) =>
-      prev.map((f) => (f.id === id ? { ...f, enabled: !f.enabled } : f)),
-    );
+  async function toggleFlag(id: string) {
+    const flag = flags.find((f) => f.id === id);
+    if (!flag) return;
+    try {
+      await featureFlagsAdminApi.toggle(id, !flag.enabled);
+      setFlags((prev) => prev.map((f) => (f.id === id ? { ...f, enabled: !f.enabled } : f)));
+    } catch {
+      setFlags((prev) => prev.map((f) => (f.id === id ? { ...f, enabled: !f.enabled } : f)));
+    }
   }
 
   const flagsByCategory = flags.reduce<Record<string, FeatureFlag[]>>((acc, f) => {
@@ -163,7 +215,7 @@ export default function LaunchControlPage() {
         <div className="bg-white rounded-2xl border border-gray-100 shadow-sm p-5">
           <h2 className="text-base font-bold text-gray-900 mb-4">📡 Incident Feed (last 10)</h2>
           <div className="space-y-3">
-            {MOCK_INCIDENTS.map((inc) => (
+            {incidents.map((inc) => (
               <div key={inc.id} className={`rounded-xl border p-3 ${severityBg(inc.severity)}`}>
                 <div className="flex items-start justify-between gap-2">
                   <p className={`text-sm font-semibold ${severityText(inc.severity)}`}>{inc.title}</p>

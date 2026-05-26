@@ -6,7 +6,7 @@ import { Plus, Minus, ShoppingCart } from 'lucide-react';
 import { useState } from 'react';
 import { cn, formatKES } from '@/lib/utils';
 import { Badge } from '@/components/ui/badge';
-import { useCartStore } from '@/lib/stores/cart.store';
+import { useCartStore, afterLocalCartAdd } from '@/lib/stores/cart.store';
 
 interface ProductCardProps {
   product: {
@@ -20,9 +20,13 @@ interface ProductCardProps {
     storageType?: string;
     isChilled?: boolean;
     packSize?: number;
+    caseSize?: number | null;
+    minimumOrderQty?: number;
     unitLabel?: string;
     badge?: string;
     inStock?: boolean;
+    pricingTiers?: Array<{ minQuantity: number; priceKes: number; discountPct: number | null }>;
+    b2bPriceKes?: number | null;
   };
   className?: string;
 }
@@ -38,6 +42,12 @@ export function ProductCard({ product, className }: ProductCardProps) {
     ? Math.round(((product.mrpKes - product.priceKes) / product.mrpKes) * 100)
     : 0;
 
+  // Best bulk discount from volume tiers
+  const bestTierDiscount = product.pricingTiers?.length
+    ? Math.max(...product.pricingTiers.map((t) => t.discountPct ?? 0))
+    : 0;
+  const caseLabel = product.caseSize ? `Case of ${product.caseSize}` : product.packSize && product.packSize > 1 ? `Pack of ${product.packSize}` : null;
+
   const handleAdd = async () => {
     setIsAdding(true);
     addItem({
@@ -48,6 +58,7 @@ export function ProductCard({ product, className }: ProductCardProps) {
       unitPriceKes: product.priceKes,
       quantity: 1,
     });
+    afterLocalCartAdd(product.id, 1);
     setTimeout(() => setIsAdding(false), 300);
   };
 
@@ -66,6 +77,11 @@ export function ProductCard({ product, className }: ProductCardProps) {
         {saving > 0 && (
           <Badge variant="green" className="text-[10px] px-1.5 py-0.5">
             {saving}% off
+          </Badge>
+        )}
+        {bestTierDiscount > 0 && (
+          <Badge variant="orange" className="text-[10px] px-1.5 py-0.5">
+            Up to {bestTierDiscount}% bulk
           </Badge>
         )}
         {product.storageType === 'CHILLED' && (
@@ -108,9 +124,9 @@ export function ProductCard({ product, className }: ProductCardProps) {
           {product.name}
         </p>
 
-        {product.packSize && (
-          <p className="text-muted-foreground text-[10px] mb-1">
-            {product.packSize} {product.unitLabel || 'units'}
+        {caseLabel && (
+          <p className="text-oda-charcoal/50 text-[10px] font-semibold mb-1 bg-oda-ivory px-1.5 py-0.5 rounded-md inline-block">
+            {caseLabel}
           </p>
         )}
 
@@ -152,7 +168,10 @@ export function ProductCard({ product, className }: ProductCardProps) {
             <span className="text-white font-bold text-sm">{quantity}</span>
             <motion.button
               whileTap={{ scale: 0.85 }}
-              onClick={() => updateQuantity(product.id, undefined, quantity + 1)}
+              onClick={() => {
+                updateQuantity(product.id, undefined, quantity + 1);
+                if (!cartItem?.cartItemId) afterLocalCartAdd(product.id, 1);
+              }}
               className="text-white w-5 h-5 flex items-center justify-center rounded-full hover:bg-oda-green-dark transition-colors"
             >
               <Plus className="w-3 h-3" />

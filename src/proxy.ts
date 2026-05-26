@@ -1,7 +1,7 @@
 import { NextRequest, NextResponse } from 'next/server';
 
 /**
- * Next.js Edge Middleware for the Oda web app.
+ * Next.js Edge Proxy for the Oda web app.
  *
  * Handles:
  *  - `/track/:id` → `/orders/:id`.
@@ -25,6 +25,7 @@ const PROTECTED_PREFIXES = [
   '/support',
   '/b2b',
   '/admin',
+  '/portal',
 ];
 
 // Routes that are always public
@@ -47,7 +48,7 @@ function isAuthenticated(req: NextRequest): boolean {
   return !!req.cookies.get('oda_access_token')?.value;
 }
 
-export function middleware(req: NextRequest) {
+export function proxy(req: NextRequest) {
   const { pathname, searchParams } = req.nextUrl;
 
   // ------------------------------------------------------------------

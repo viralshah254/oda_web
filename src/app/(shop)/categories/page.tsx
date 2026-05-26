@@ -19,10 +19,10 @@ const categories = [
 
 export default function CategoriesPage() {
   return (
-    <div className="min-h-screen bg-[#F5F5F0]">
-      <div className="bg-white border-b border-[#E8E8E0] px-4 py-5">
+    <div className="min-h-screen bg-oda-ivory">
+      <div className="bg-white border-b border-gray-100 px-4 py-5">
         <div className="max-w-5xl mx-auto">
-          <h1 className="text-2xl font-extrabold text-[#1A1A1A] font-plus-jakarta">All Categories</h1>
+          <h1 className="text-2xl font-extrabold text-oda-charcoal font-plus-jakarta">All Categories</h1>
           <p className="text-sm text-[#666] mt-1 font-plus-jakarta">Browse everything Oda delivers in ~30 minutes</p>
         </div>
       </div>
@@ -32,10 +32,10 @@ export default function CategoriesPage() {
             <Link
               key={cat.slug}
               href={`/categories/${cat.slug}`}
-              className="bg-white rounded-2xl border border-[#E8E8E0] p-5 text-center hover:border-[#198A2E] hover:shadow-md transition-all group"
+              className="bg-white rounded-2xl border border-gray-100 p-5 text-center hover:border-oda-green hover:shadow-md transition-all group"
             >
               <div className="text-4xl mb-3">{cat.emoji}</div>
-              <p className="text-sm font-bold text-[#1A1A1A] font-plus-jakarta leading-tight group-hover:text-[#198A2E] transition-colors">{cat.name}</p>
+              <p className="text-sm font-bold text-oda-charcoal font-plus-jakarta leading-tight group-hover:text-oda-green transition-colors">{cat.name}</p>
               <p className="text-xs text-[#999] mt-1 font-plus-jakarta">{cat.count}</p>
             </Link>
           ))}

@@ -4,7 +4,7 @@ import { useState } from 'react';
 import { motion } from 'framer-motion';
 import Link from 'next/link';
 import { ShoppingCart, SlidersHorizontal, ChevronDown } from 'lucide-react';
-import { useCartStore } from '@/lib/stores/cart.store';
+import { useCartStore, afterLocalCartAdd } from '@/lib/stores/cart.store';
 import { formatKES } from '@/lib/utils';
 import type { CatalogProduct } from '@/lib/server/catalog-fetcher';
 
@@ -101,7 +101,7 @@ export function CategoryPageClient({ slug, initialProducts }: Props) {
           <p className="text-sm text-oda-charcoal/50 font-plus-jakarta mt-1">Try a different category or search above.</p>
         </div>
       ) : (
-        <div className="grid grid-cols-2 sm:grid-cols-3 md:grid-cols-4 lg:grid-cols-6 gap-3">
+        <div className="grid grid-cols-2 sm:grid-cols-3 lg:grid-cols-3 xl:grid-cols-4 gap-3">
           {sortedProducts.map((product, i) => (
             <CategoryProductCard key={product.id} product={product} index={i} />
           ))}
@@ -160,7 +160,10 @@ function CategoryProductCard({ product, index }: { product: CatalogProduct; inde
         ) : quantity === 0 ? (
           <motion.button
             whileTap={{ scale: 0.9 }}
-            onClick={() => addItem({ id: product.id, productId: product.id, name: product.name, unitPriceKes: product.priceKes, quantity: 1 })}
+            onClick={() => {
+              addItem({ id: product.id, productId: product.id, name: product.name, unitPriceKes: product.priceKes, quantity: 1 });
+              afterLocalCartAdd(product.id, 1);
+            }}
             className="w-full h-8 bg-oda-green text-white text-xs font-bold rounded-button flex items-center justify-center gap-1 hover:bg-oda-green-dark"
           >
             <span>+</span> ADD
@@ -169,7 +172,15 @@ function CategoryProductCard({ product, index }: { product: CatalogProduct; inde
           <div className="flex items-center justify-between bg-oda-green rounded-button h-8 px-2">
             <button onClick={() => updateQuantity(product.id, undefined, quantity - 1)} className="text-white text-lg font-bold">-</button>
             <span className="text-white font-bold text-sm">{quantity}</span>
-            <button onClick={() => updateQuantity(product.id, undefined, quantity + 1)} className="text-white text-lg font-bold">+</button>
+            <button
+              onClick={() => {
+                updateQuantity(product.id, undefined, quantity + 1);
+                if (!cartItem?.cartItemId) afterLocalCartAdd(product.id, 1);
+              }}
+              className="text-white text-lg font-bold"
+            >
+              +
+            </button>
           </div>
         )}
       </div>

@@ -52,6 +52,7 @@ export default function AdminB2BKycPage() {
   const [previewLoading, setPreviewLoading] = useState(false);
   const [selectedIds, setSelectedIds] = useState<Set<string>>(() => new Set());
   const [searchDraft, setSearchDraft] = useState(filterSearch);
+  const [creditTermsDays, setCreditTermsDays] = useState<14 | 30>(14);
 
   useEffect(() => {
     setSearchDraft(filterSearch);
@@ -162,7 +163,11 @@ export default function AdminB2BKycPage() {
     }
     setActionBusy(true);
     try {
-      await adminB2bApi.review(row.id, { outcome, reason });
+      await adminB2bApi.review(row.id, {
+        outcome,
+        reason,
+        ...(outcome === 'APPROVE' ? { creditTermsDays } : {}),
+      });
       await load(1, false);
       setSelected(null);
     } finally {
@@ -467,6 +472,25 @@ export default function AdminB2BKycPage() {
           </div>
           {['PENDING', 'UNDER_REVIEW', 'MORE_INFO_REQUIRED'].includes(selected.kycStatus) && (
             <div className="space-y-2">
+              <div className="rounded-xl border border-oda-charcoal/10 p-3 space-y-2">
+                <p className="text-xs font-bold text-oda-charcoal font-plus-jakarta">Trade credit terms (on approve)</p>
+                <div className="flex gap-2">
+                  {([14, 30] as const).map((days) => (
+                    <button
+                      key={days}
+                      type="button"
+                      onClick={() => setCreditTermsDays(days)}
+                      className={`flex-1 py-2 rounded-xl text-xs font-bold font-plus-jakarta border ${
+                        creditTermsDays === days
+                          ? 'bg-oda-mint border-oda-green text-oda-green'
+                          : 'bg-white border-oda-charcoal/10 text-oda-charcoal/60'
+                      }`}
+                    >
+                      NET_{days}
+                    </button>
+                  ))}
+                </div>
+              </div>
               <button
                 type="button"
                 disabled={actionBusy}

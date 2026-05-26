@@ -1,10 +1,11 @@
 'use client';
 
-import React, { useState } from 'react';
+import React, { useState, useEffect } from 'react';
 import {
   LineChart, Line, BarChart, Bar, XAxis, YAxis, Tooltip, ResponsiveContainer,
   CartesianGrid, PieChart, Pie, Cell,
 } from 'recharts';
+import { adminApi } from '@/lib/api-client';
 
 // ── Mock data ─────────────────────────────────────────────────────────────────
 
@@ -73,6 +74,17 @@ function KpiCard({ label, value, sub, trend }: { label: string; value: string; s
 
 export default function ExecutivePage() {
   const [period, setPeriod] = useState<'day' | 'week' | 'month'>('day');
+  const [live, setLive] = useState<{ ordersToday?: number; revenueToday?: number; activeRiders?: number } | null>(null);
+
+  useEffect(() => {
+    adminApi.getDashboard().then((res) => {
+      setLive({
+        ordersToday: res.data?.orders?.today,
+        revenueToday: res.data?.revenue?.todayKes,
+        activeRiders: res.data?.operations?.activeRiders,
+      });
+    }).catch(() => {});
+  }, []);
 
   return (
     <div className="p-6 max-w-7xl mx-auto space-y-10">
@@ -100,10 +112,18 @@ export default function ExecutivePage() {
       <section>
         <SectionTitle>📈 Growth</SectionTitle>
         <div className="grid grid-cols-2 md:grid-cols-4 gap-4 mb-6">
-          <KpiCard label="GMV Today" value="KSh 1.24M" trend="+6.2%" />
-          <KpiCard label="Orders Today" value="2,847" trend="+4.1%" />
-          <KpiCard label="New Customers" value="312" sub="Today" trend="+11%" />
-          <KpiCard label="Repeat Rate" value="47%" sub="Last 7 days" trend="+3%" />
+          <KpiCard
+            label="GMV Today"
+            value={live ? formatKsh(live.revenueToday ?? 0) : '—'}
+            trend={live ? 'Live' : undefined}
+          />
+          <KpiCard
+            label="Orders Today"
+            value={live ? String(live.ordersToday ?? 0) : '—'}
+            trend={live ? 'Live' : undefined}
+          />
+          <KpiCard label="Active Riders" value={live ? String(live.activeRiders ?? 0) : '—'} sub="Online now" />
+          <KpiCard label="Repeat Rate" value="47%" sub="Last 7 days (trend chart)" trend="+3%" />
         </div>
         <div className="grid grid-cols-1 lg:grid-cols-2 gap-4">
           <div className="bg-white rounded-2xl border border-gray-100 shadow-sm p-4">

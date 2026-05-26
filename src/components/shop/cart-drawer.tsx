@@ -3,7 +3,7 @@
 import { motion, AnimatePresence } from 'framer-motion';
 import { X, Trash2, ShoppingBag } from 'lucide-react';
 import Link from 'next/link';
-import { useCartStore } from '@/lib/stores/cart.store';
+import { useCartStore, afterLocalCartAdd } from '@/lib/stores/cart.store';
 import { formatKES } from '@/lib/utils';
 
 export function CartDrawer() {
@@ -18,14 +18,14 @@ export function CartDrawer() {
             animate={{ opacity: 1 }}
             exit={{ opacity: 0 }}
             onClick={closeCart}
-            className="fixed inset-0 bg-black/40 backdrop-blur-sm z-50"
+            className="fixed inset-0 bg-black/40 backdrop-blur-sm z-[115]"
           />
           <motion.div
             initial={{ x: '100%' }}
             animate={{ x: 0 }}
             exit={{ x: '100%' }}
             transition={{ type: 'spring', damping: 28, stiffness: 280 }}
-            className="fixed right-0 top-0 h-full w-full max-w-md bg-oda-ivory shadow-floating z-50 flex flex-col"
+            className="fixed right-0 top-0 h-full w-full max-w-md bg-oda-ivory shadow-floating z-[120] flex flex-col"
           >
             {/* Header */}
             <div className="flex items-center justify-between p-5 border-b border-oda-charcoal/8">
@@ -73,7 +73,15 @@ export function CartDrawer() {
                       <div className="flex items-center gap-1 bg-oda-green rounded-[10px] h-8 px-2">
                         <button onClick={() => updateQuantity(item.productId, item.variantId, item.quantity - 1)} className="text-white text-lg font-bold w-5 flex items-center justify-center">-</button>
                         <span className="text-white font-bold text-sm w-5 text-center">{item.quantity}</span>
-                        <button onClick={() => updateQuantity(item.productId, item.variantId, item.quantity + 1)} className="text-white text-lg font-bold w-5 flex items-center justify-center">+</button>
+                        <button
+                          onClick={() => {
+                            updateQuantity(item.productId, item.variantId, item.quantity + 1);
+                            if (!item.cartItemId) afterLocalCartAdd(item.productId, 1, item.variantId);
+                          }}
+                          className="text-white text-lg font-bold w-5 flex items-center justify-center"
+                        >
+                          +
+                        </button>
                       </div>
                       <button
                         onClick={() => removeItem(item.productId, item.variantId)}

@@ -4,7 +4,7 @@ import { useRef } from 'react';
 import { motion } from 'framer-motion';
 import { ArrowRight, ChevronLeft, ChevronRight, ShoppingCart } from 'lucide-react';
 import Link from 'next/link';
-import { useCartStore } from '@/lib/stores/cart.store';
+import { useCartStore, afterLocalCartAdd } from '@/lib/stores/cart.store';
 import { formatKES } from '@/lib/utils';
 
 // ── Types ────────────────────────────────────────────────────────────────────
@@ -140,21 +140,21 @@ export function DealProductCard({
       <div className="relative">
         {saving > 0 && (
           <div className="absolute top-2 left-2 z-10">
-            <span className="bg-[#198A2E] text-white text-[10px] font-bold px-1.5 py-0.5 rounded-full font-plus-jakarta">
+            <span className="bg-oda-green text-white text-[10px] font-bold px-1.5 py-0.5 rounded-full font-plus-jakarta">
               {saving}% off
             </span>
           </div>
         )}
         {product.isHighlighted && (
           <div className="absolute top-2 right-2 z-10">
-            <span className="bg-[#F8C915] text-[#1A1A1A] text-[10px] font-bold px-1.5 py-0.5 rounded-full font-plus-jakarta">
+            <span className="bg-[#F8C915] text-oda-charcoal text-[10px] font-bold px-1.5 py-0.5 rounded-full font-plus-jakarta">
               ⭐ Pick
             </span>
           </div>
         )}
         <Link href={productHref} className="block">
           <div
-            className={`bg-[#F5F5F0] flex items-center justify-center ${size === 'large' ? 'aspect-[4/3]' : size === 'small' ? 'aspect-square' : 'aspect-square'}`}
+            className={`bg-oda-ivory flex items-center justify-center ${size === 'large' ? 'aspect-[4/3]' : size === 'small' ? 'aspect-square' : 'aspect-square'}`}
           >
             {product.imageUrl ? (
               // eslint-disable-next-line @next/next/no-img-element
@@ -164,7 +164,7 @@ export function DealProductCard({
                 className="w-full h-full object-contain p-2"
               />
             ) : (
-              <ShoppingCart className="w-8 h-8 text-[#1A1A1A]/10" />
+              <ShoppingCart className="w-8 h-8 text-oda-charcoal/10" />
             )}
           </div>
         </Link>
@@ -172,7 +172,7 @@ export function DealProductCard({
       <div className="p-2.5">
         <Link href={productHref}>
           <p
-            className={`text-xs font-medium line-clamp-2 mb-1.5 hover:text-[#198A2E] transition-colors font-plus-jakarta ${size === 'large' ? 'min-h-[2rem]' : 'min-h-[2.5rem]'}`}
+            className={`text-xs font-medium line-clamp-2 mb-1.5 hover:text-oda-green transition-colors font-plus-jakarta ${size === 'large' ? 'min-h-[2rem]' : 'min-h-[2.5rem]'}`}
             style={{ color: isDarkBg ? '#e0e0e0' : '#1A1A1A' }}
           >
             {product.name}
@@ -194,18 +194,27 @@ export function DealProductCard({
         {quantity === 0 ? (
           <motion.button
             whileTap={{ scale: 0.92 }}
-            onClick={() =>
-              addItem({ id: product.id, productId: product.id, name: product.name, unitPriceKes: product.priceKes, quantity: 1 })
-            }
-            className="w-full h-8 bg-[#198A2E] hover:bg-[#166B24] text-white text-xs font-bold rounded-xl flex items-center justify-center gap-1 transition-colors font-plus-jakarta"
+            onClick={() => {
+              addItem({ id: product.id, productId: product.id, name: product.name, unitPriceKes: product.priceKes, quantity: 1 });
+              afterLocalCartAdd(product.id, 1);
+            }}
+            className="w-full h-8 bg-oda-green hover:bg-oda-green-dark text-white text-xs font-bold rounded-xl flex items-center justify-center gap-1 transition-colors font-plus-jakarta"
           >
             + ADD
           </motion.button>
         ) : (
-          <div className="flex items-center justify-between bg-[#198A2E] rounded-xl h-8 px-2">
+          <div className="flex items-center justify-between bg-oda-green rounded-xl h-8 px-2">
             <button onClick={() => updateQuantity(product.id, undefined, quantity - 1)} className="text-white text-lg font-bold leading-none">−</button>
             <span className="text-white font-bold text-sm font-plus-jakarta">{quantity}</span>
-            <button onClick={() => updateQuantity(product.id, undefined, quantity + 1)} className="text-white text-lg font-bold leading-none">+</button>
+            <button
+              onClick={() => {
+                updateQuantity(product.id, undefined, quantity + 1);
+                if (!cartItem?.cartItemId) afterLocalCartAdd(product.id, 1);
+              }}
+              className="text-white text-lg font-bold leading-none"
+            >
+              +
+            </button>
           </div>
         )}
       </div>

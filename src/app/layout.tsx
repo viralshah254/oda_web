@@ -1,5 +1,6 @@
 import type { Metadata } from 'next';
 import { Plus_Jakarta_Sans } from 'next/font/google';
+import { SentryInit } from '@/components/sentry-init';
 import './globals.css';
 
 const plusJakarta = Plus_Jakarta_Sans({
@@ -26,7 +27,10 @@ export default function RootLayout({
 }) {
   return (
     <html lang="en" className={plusJakarta.variable}>
-      <body className={`${plusJakarta.className} antialiased`}>{children}</body>
+      <body className={`${plusJakarta.className} antialiased`}>
+        <SentryInit />
+        {children}
+      </body>
     </html>
   );
 }
